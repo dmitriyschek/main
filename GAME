@@ -1,0 +1,754 @@
+import random as r
+import time
+
+hp = 0
+coins = 0
+damage = 0
+player_name = ""
+monsters_killed = 0
+warriors = []
+
+
+def printParameters() :
+    print("Герой {}, у тебя {} жизней, {} монет и {} урона.".format(player_name, hp, coins, damage))
+
+
+def printHp() :
+    print("Показатель здоровья: ", hp)
+
+
+def printCoins() :
+    print("Осталось монет: ", coins)
+
+
+def printDmg() :
+    print("Урон: ", damage)
+
+
+def createCharacter() :
+    global player_name
+    global hp
+    global coins
+    global damage
+    player_name = input("Введите имя своего персонажа: ")
+    hp = r.randint(10, 15)
+    coins = r.randint(0, 50)
+    damage = r.randint(1, 5)
+
+
+def meetShop() :
+    global hp
+    global coins
+    global damage
+
+    def buy(cost) :
+        global coins
+        if coins >= cost :
+            coins -= cost
+            printCoins()
+            return True
+        print("Недостаточно монет!")
+        return False
+
+    weaponLvl = r.randint(1, 3)
+    weaponDmg = r.randint(1, 5) * weaponLvl
+    weapons = ["Железный меч", "Золотой меч", "Каменный меч", "Деревяный меч"]
+    weaponrarities = ["Ветхий", "Испорченный", "Новый", "Редкий", "Легендарный"]
+    weaponRarity = weaponrarities[weaponLvl - 1]
+    weaponCost = r.randint(3, 10) * weaponLvl
+    weapon = r.choice(weapons)
+
+    oneHpCost = 5
+    threeHpCost = 12
+
+    print("На пути ты набрел на лавку купца!")
+    printParameters()
+
+    while True :
+        print("1) Слабое зелье здоровья (восстанавливает 1 сердце) - ", oneHpCost, "монет")
+        print("2) Сильное зелье здоровья (восстанавливает 3 сердца) - ", threeHpCost, "монет")
+        print("3) {0} {1} - {2} монет".format(weaponRarity, weapon, weaponCost))
+        print("4) Уйти")
+
+        choice = input("Что хочешь приобрести? (выбери номер варианта): ")
+
+        if choice == "1" :
+            if buy(oneHpCost) :
+                hp += 1
+                printHp()
+        elif choice == "2" :
+            if buy(threeHpCost) :
+                hp += 3
+                printHp()
+        elif choice == "3" :
+            if buy(weaponCost) :
+                damage = weaponDmg
+                printDmg()
+        elif choice == "4" :
+            print("Ты решил уйти из лавки купца.")
+            break
+        else :
+            print("Такого варианта нет!")
+
+    return hp, coins, damage
+
+
+def meetMonster() :
+    global hp
+    global coins
+    global monsters_killed
+
+    monsterLvl = r.randint(1, 3)
+    monsterHp = monsterLvl
+    monsterDmg = monsterLvl * 2 - 1
+    monsters = ["Вурдалак", "Леший", "Баба Яга", "Водяной"]
+    monster = r.choice(monsters)
+    print(
+        "Ты встретил чудище - {0}, у него {1} уровень, {2} здоровья и {3} урона!".format(monster, monsterLvl, monsterHp,
+                                                                                         monsterDmg))
+    printParameters()
+
+    while monsterHp > 0 :
+        choice = input("Сражаться? (да/нет): ").lower()
+
+        if choice == "да" :
+            monsterHp -= damage
+            print("Ты атаковал чудище и у него осталось", monsterHp, "здоровья.")
+        elif choice == "нет" :
+            chance = r.randint(0, monsterLvl)
+            if chance == 0 :
+                print("Тебе удалось скрыться!")
+                break
+            else :
+                print("Убежать не удалось, сражайся!")
+        else :
+            print("Такой команды нет, повтори свой выбор.")
+
+        if monsterHp > 0 :
+            hp -= monsterDmg
+            print("Чудище наносит удар и у тебя", hp, "здоровья.")
+            if hp <= 0 :
+                print("Ты проиграл, готов начать сначала?")
+                break
+        else :
+            loot = r.randint(0, 5) + monsterLvl
+            coins += loot
+            monsters_killed += 1
+            print("Тебе удалось одолеть чудище. Получено {} монет. Твоя награда!".format(loot))
+            printCoins()
+            break
+
+        if warriors :
+            input("Нажмите Enter, чтобы ходить с богатырями...")
+            warriors_turn()
+
+    return hp, coins, damage
+
+
+def dynamicEvent() :
+    global hp
+    global coins
+    event = r.randint(0, 2)
+    if event == 0 :
+        coinsFound = r.randint(1, 10)
+        coins += coinsFound
+        print("Ты нашел сундук с монетами! Получено {} монет. Твоя награда!".format(coinsFound))
+        printCoins()
+    elif event == 1 :
+        dmgTaken = r.randint(0, 3)
+        hp -= dmgTaken
+        if hp < 0 :
+            hp = 0
+        print("Ты попал в засаду чудища! Получено {} урона. Осталось {} здоровья.".format(dmgTaken, hp))
+        printHp()
+    else :
+        print("Ничего необычного не произошло...")
+
+
+def mysteriousSage() :
+    global hp
+    global coins
+    global damage
+
+    print("Ты встретил загадочного Волхва!")
+    print("Он предлагает тебе следующие улучшения:")
+
+    choices = ["Улучшить меч (+5 урона) - 20 монет", "Улучшить броню (+10 урона) - 30 монет",
+               "Слабый таинственный отвар (восстанавливает 5 сердец) - 20 монет", "Сильный таиственный отвар"
+                                                                                  " (восстанавливает 10 сердец) - 30 монет"]
+    print("0) Уйти")
+
+    for i, item in enumerate(choices, start=1) :
+        print(f"{i}) {item}")
+
+    choice = input("Что хочешь приобрести? (выбери номер варианта): ")
+
+    if choice == "0" :
+        print("Ты решил уйти от загадочного Волхва.")
+    elif choice == "1" :
+        if coins >= 20 :
+            coins -= 20
+            damage += 5
+            print("Ты принял улучшение меча. Теперь твой урон составляет", damage)
+        else :
+            print("Недостаточно монет!")
+    elif choice == "2" :
+        if coins >= 30 :
+            coins -= 30
+            damage += 10
+            print("Ты принял улучшение брони. Теперь у тебя максимальное здоровье составляет", damage)
+        else :
+            print("Недостаточно монет!")
+    elif choice == "3" :
+        if coins >= 20 :
+            coins -= 20
+            hp += 5
+            print("Ты принял слабый таинственный отвар. Теперь у тебя", hp, "здоровья.")
+        else :
+            print("Недостаточно монет!")
+    elif choice == "4" :
+        if coins >= 30 :
+            coins -= 30
+            hp += 10
+            print("Ты принял сильный таиственный отвар. Теперь у тебя", hp, "здоровья.")
+        else :
+            print("Недостаточно монет!")
+    else :
+        print("Такого варианта нет!")
+
+    printCoins()
+    printHp()
+
+
+def dragonTreasure() :
+    global hp
+    global coins
+
+    print("Ты обнаружил пещеру с сокровищами Змея Горыныча!")
+    print("1) Попробовать украсть сокровища")
+    print("2) Осторожно покинуть пещеру")
+
+    choice = input("Что будешь делать? (выбери номер варианта): ")
+
+    if choice == "1" :
+        chance = r.randint(0, 1)
+        if chance == 0 :
+            print("Ты смог украсть немного сокровищ!")
+            coins_found = r.randint(10, 20)
+            coins += coins_found
+            print(f"Получено {coins_found} монет. Твоя награда!")
+        else :
+            print("Твоя попытка украсть сокровища ты разбудил Змея Горыныча!")
+            dragon_hp = r.randint(5, 10)
+            dragon_dmg = r.randint(2, 5)
+            while dragon_hp > 0 and hp > 0 :
+                print(f"Змей Горыныч наносит удар и у тебя {hp} здоровья.")
+                print(f"Ты атакуешь Змея Горыныча и у него осталось {dragon_hp} здоровья.")
+                hp -= dragon_dmg
+                dragon_hp -= damage
+                time.sleep(1)
+
+            if hp > 0 :
+                print("Ты одолел Змея Горыныча и забрал сокровища!")
+                coins_found = r.randint(30, 50)
+                coins += coins_found
+                print(f"Получено {coins_found} монет. Твоя награда!")
+            else :
+                print("Змей Горыныч был слишком сильным. Ты убежал с пустыми руками.")
+    elif choice == "2" :
+        print("Ты решил осторожно покинуть пещеру.")
+    else :
+        print("Такого варианта нет!")
+
+    printCoins()
+    printHp()
+
+
+def villageQuest() :
+    global hp
+    global coins
+
+    print("Ты нашел лесную деревню!")
+    print("Жители деревни просят твою помощь!")
+    print("Они потеряли священный артефакт и просят тебя найти его.")
+    print("1) Принять квест")
+    print("2) Отказаться")
+
+    choice = input("Что будешь делать? (выбери номер варианта): ")
+
+    if choice == "1" :
+        print("Ты согласился помочь деревне и отправился на поиски артефакта...")
+        time.sleep(2)
+
+        chance = r.randint(0, 1)
+        if chance == 0 :
+            print("Ты обнаружил артефакт в заброшенной хижине.")
+            coins_found = r.randint(10, 30)
+            coins += coins_found
+            print(f"Ты вернул артефакт жителям и получил награду в виде {coins_found} монет.")
+        else :
+            print("Твои поиски не увенчались успехом.")
+            hp_lost = r.randint(5, 10)
+            hp -= hp_lost
+            print(f"Ты потратил много времени на поиски и потерял {hp_lost} здоровья.")
+
+    elif choice == "2" :
+        print("Ты отказался помогать деревне.")
+    else :
+        print("Такого варианта нет!")
+
+    printCoins()
+    printHp()
+
+
+def hireArcher() :
+    global coins
+    global damage
+
+    if coins >= 10 :
+        coins -= 10
+        damage += 3
+        print("Ты нанял лучника в свою команду! Теперь твой урон увеличен на 3.")
+    else :
+        print("Недостаточно монет!")
+
+    printCoins()
+
+
+def hireHeavyInfantry() :
+    global coins
+    global damage
+
+    if coins >= 15 :
+        coins -= 15
+        damage += 5
+        print("Ты нанял тяжёлого дружинника в свою команду! Теперь твой урон увеличен на 5.")
+    else :
+        print("Недостаточно монет!")
+
+    printCoins()
+
+
+def hireHealer() :
+    global coins
+    global hp
+
+    if coins >= 10 :
+        coins -= 10
+        hp += 3
+        print("Ты нанял лекаря в свою команду! Теперь твоё здоровье увеличено на 3.")
+    else :
+        print("Недостаточно монет!")
+
+    printCoins()
+
+
+def tavern() :
+    print("Добро пожаловать в Корчму!")
+    print("1) Нанять лучника (+3 к урону, стоимость: 10 монет)")
+    print("2) Нанять тяжёлого дружинника (+5 к урону, стоимость: 15 монет)")
+    print("3) Нанять лекаря (+3 к здоровью, стоимость: 10 монет)")
+    print("4) Нанять богатыря (случайное имя и способность, стоимость: 20-30 монет)")
+    print("5) Уйти")
+
+    choice = input("Что будешь делать? (выбери номер варианта): ")
+
+    if choice == "1" :
+        hireArcher()
+    elif choice == "2" :
+        hireHeavyInfantry()
+    elif choice == "3" :
+        hireHealer()
+    elif choice == "4" :
+        hireWarrior()
+    elif choice == "5" :
+        print("Ты решил покинуть Корчму.")
+    else :
+        print("Такого варианта нет!")
+
+
+def warriors_turn() :
+    global hp
+
+    for warrior in warriors :
+        warrior_name = warrior["name"]
+        warrior_ability = warrior["ability"]
+
+        print(f"Ходит богатырь {warrior_name} ({warrior_ability})")
+
+        if warrior_ability == "Лучник" :
+            print("Богатырь наносит урон противнику.")
+            monster_hp = r.randint(5, 10)
+            monster_dmg = r.randint(2, 5)
+            while monster_hp > 0 and hp > 0 :
+                print(f"Противник наносит удар и у тебя {hp} здоровья.")
+                print(f"Богатырь атакует противника и наносит {damage} урона.")
+                monster_hp -= damage
+                if monster_hp > 0 :
+                    hp -= monster_dmg
+        elif warrior_ability == "Тяжёлый дружинник" :
+            print("Богатырь атакует противника сильным ударом.")
+            monster_hp = r.randint(7, 15)
+            monster_dmg = r.randint(2, 5)
+            while monster_hp > 0 and hp > 0 :
+                print(f"Противник наносит удар и у тебя {hp} здоровья.")
+                print(f"Богатырь атакует противника сильным ударом и наносит {damage} урона.")
+                monster_hp -= damage
+                if monster_hp > 0 :
+                    hp -= monster_dmg
+        elif warrior_ability == "Лекарь" :
+            print("Богатырь лечит твои раны.")
+            hp_healed = r.randint(3, 8)
+            print(f"Твоё здоровье увеличено на {hp_healed}.")
+            hp += hp_healed
+
+        print(f"Твоё текущее здоровье: {hp}")
+
+
+def robinHoodBattle() :
+    global hp
+    global coins
+
+    print("Ты наткнулся на лесного разбойника по имени Соловей.")
+    print("Он готов выдать тебе часть своей добычи, но только если вы переживёте бой.")
+    print("Будешь сражаться с ним? (да/нет)")
+
+    choice = input().lower()
+
+    if choice == "да" :
+        solovey_hp = r.randint(15, 25)
+        solovey_dmg = r.randint(5, 10)
+        print(f"Ты сразишься с Соловьем-разбойником, у него {solovey_hp} здоровья и {solovey_dmg} урона.")
+
+        # Ход богатырей (если они есть в отряде)
+        if warriors :
+            input("Нажмите Enter, чтобы ходить с богатырями...")
+        if hp <= 3 :
+            # Вызываем функцию, если проиграли в бою и есть богатыри в отряде
+            loseWarrior()
+
+        while solovey_hp > 0 and hp > 0 :
+            # Ход главного героя
+            print("Атакуешь? (да/нет): ")
+            choice = input().lower()
+
+            if choice == "да" :
+                solovey_hp -= damage
+                print(f"Ты атаковал Соловья-разбойника и у него осталось {solovey_hp} здоровья.")
+            elif choice == "нет" :
+                chance = r.randint(0, 1)
+                if chance == 0 :
+                    print("Тебе удалось скрыться!")
+                    break
+                else :
+                    print("Убежать не удалось, сражайся!")
+            else :
+                print("Такой команды нет, повтори свой выбор.")
+
+            if solovey_hp > 0 :
+                hp -= solovey_dmg
+                print(f"Соловей-разбойник атакует тебя и у тебя осталось {hp} здоровья.")
+                if hp <= 0 :
+                    print("Ты проиграл битву с Соловьем-разбойником.")
+                    break
+            else :
+                loot = r.randint(20, 50)
+                coins += loot
+                print(f"Ты одолел Соловья-разбойника. Получено {loot} монет. Твоя награда!")
+                printCoins()
+                break
+    else :
+        print("Ты решил не сражаться с Соловьем-разбойником и продолжил своё путешествие.")
+
+
+def banditQuest() :
+    global coins
+
+    print("Деревня нуждается в помощи! Она стала жертвой нападений бандитов.")
+    print("Тебе предлагают вознаграждение в 40 монет за очистку деревни от бандитов.")
+    print("Примешься за это дело? (да/нет)")
+
+    choice = input().lower()
+
+    if choice == "да" :
+        # Проверяем наличие богатырей в отряде
+        if warriors :
+            print("Твои богатыри вступают в схватку с бандитами!")
+            success = r.randint(0, 1)  # Шанс на успешное завершение с помощью богатырей
+            if success :
+                coins += 40
+                print("Успешное завершение квеста! Получено 40 монет. Твоя награда!")
+            else :
+                print("К сожалению, квест не удался. Не получено награды.")
+            if hp <= 3 :
+                # Вызываем функцию, если проиграли в бою и есть богатыри в отряде
+                loseWarrior()
+        else :
+            print("Без помощи богатырей этот квест может быть опасным. Нанять их в Корчме, если хочешь повысить шансы.")
+    else :
+        print("Ты решил не браться за квест и покинул деревню.")
+
+
+def loseWarrior() :
+    global warriors
+
+    if warriors :
+        warrior_to_lose = r.choice(warriors)
+        warriors.remove(warrior_to_lose)
+        print(f"{warrior_to_lose['name']} попал в ловушку и покинул отряд.")
+        print("Твой отряд стал слабее, но ты продолжаешь свои приключения.")
+        print(f"Оставшиеся богатыри в отряде: {', '.join(warrior['name'] for warrior in warriors)}")
+    else :
+        print("Ты попал в ловушку, но у тебя нет богатырей, которые могли бы помочь.")
+        print("Тебе предстоит справиться самостоятельно.")
+
+
+def tmutarakan() :
+    global hp
+    global coins
+    global velles_hp
+    global velles_dmg
+
+    print("Ты обнаружил Тмутаракань, мифическое место, скрытое от глаз обычных смертных.")
+    print("Хочешь попытаться исследовать это место и покорить его тайны? (да/нет)")
+
+    choice = input().lower()
+
+    if choice == "да" :
+        velles_hp = r.randint(150, 200)
+        velles_dmg = r.randint(20, 30)
+        print(
+            f"Ты входишь в Тмутаракань и встречаешь могущественного Титана Велеса, у которого {velles_hp} здоровья и {velles_dmg} урона.")
+
+        # Ход богатырей (если они есть в отряде)
+        if warriors :
+            input("Нажмите Enter, чтобы ходить с богатырями...")
+
+        while velles_hp > 0 and hp > 0 :
+            # Ход главного героя
+            print("Что будешь делать? (атаковать/убежать): ")
+            choice = input().lower()
+
+            if choice == "атаковать" :
+                velles_hp -= damage
+                print(f"Ты атакуешь Титана Велеса и у него осталось {velles_hp} здоровья.")
+            elif choice == "убежать" :
+                chance = r.randint(0, 1)
+                if chance == 0 :
+                    print("Тебе удалось скрыться!")
+                    break
+                else :
+                    print("Убежать не удалось, продолжай свой путь!")
+            else :
+                print("Такой команды нет, повтори свой выбор.")
+
+            # Ход богатырей (если они есть в отряде)
+            if velles_hp > 0 and warriors :
+                for warrior in warriors :
+                    warriorAction(warrior)
+
+            if velles_hp > 0 :
+                hp -= velles_dmg
+                print(f"Титан Велес атакует тебя и у тебя осталось {hp} здоровья.")
+                if hp <= 0 :
+                    print("Ты не смог победить могущественного Титана Велеса в Тмутаракани.")
+                    print("История после поражения:")
+                    print(
+                        "Ты покидаешь Тмутаракань, сознавая, что мифическое место скрывает свои тайны от неосторожных искателей.")
+                    break
+            else :
+                loot = r.randint(200, 300)
+                coins += loot
+                print(
+                    f"Ты победил могущественного Титана Велеса и обнаружил древние знания и магические предметы. Получено {loot} монет. Твоя награда!")
+                printCoins()
+                print("История после победы:")
+                print("Ты смог преодолеть Титана Велеса и обнаружил магические сокровища.")
+                print("Теперь у тебя есть доступ к знаниям, которые помогут в будущих приключениях.")
+                break
+    else :
+        print("Ты решил не рисковать и продолжил своё путешествие в поисках других приключений.")
+
+
+def warriorAction(warrior) :
+    global velles_hp
+    if warrior["ability"] == "Лучник" :
+        velles_hp -= 10
+        print(f"{warrior['name']} выстрелил из лука и нанес 10 урона Титану Велесу.")
+    elif warrior["ability"] == "Тяжелый дружинник" :
+        velles_hp -= 15
+        print(f"{warrior['name']} вступил в бой и нанес 15 урона Титану Велесу.")
+    elif warrior["ability"] == "Лекарь" :
+        hp += 5
+        print(f"{warrior['name']} использовал магию и восстановил 5 здоровья Титану Велесу.")
+    else :
+        print(f"{warrior['name']} оказался бездейственным в этой схватке.")
+
+
+def initGame() :
+    global hp
+    global coins
+    global damage
+    global monsters_killed
+
+    createCharacter()
+    print(
+        "Добро пожаловать в мир бесконечного Дремучего Леса, {}! Удачи в странствиях!".format(
+            player_name))
+    printParameters()
+    print(
+        "Твоя цель - накопить 100 монет и начать новую жизнь. Но ты всегда можешь выбрать продолжить свои приключения после достижения цели.")
+
+
+def hireWarrior() :
+    global coins
+
+    if len(warriors) >= 3 :
+        print("В твоём отряде уже максимальное количество богатырей (3).")
+        return
+
+    warrior_names = ["Илья Муромец", "Добрыня Никитич", "Алёша Попович", "Алёша Мазунов", "Микита Кожемяка"]
+    warrior_name = r.choice(warrior_names)
+    warrior_ability = r.choice(["Лучник", "Тяжёлый дружинник", "Лекарь"])
+    warrior_cost = r.randint(20, 30)
+
+    if coins >= warrior_cost :
+        coins -= warrior_cost
+        warriors.append({"name" : warrior_name, "ability" : warrior_ability})
+        print(f"Ты нанял богатыря {warrior_name} в свою команду! Тип: {warrior_ability}")
+    else :
+        print("Недостаточно монет!")
+
+    printCoins()
+
+
+def printHeroInfo() :
+    print(f"Герой {player_name}, у тебя {hp} жизней, {coins} монет и {damage} урона.")
+
+
+def printWarriorsInfo() :
+    if warriors :
+        print("Отряд богатырей:")
+        for idx, warrior in enumerate(warriors, start=1) :
+            warrior_name = warrior['name']
+            warrior_ability = warrior['ability']
+            print(f"Богатырь {idx}, {warrior_name} - {warrior_ability}")
+
+
+def buildCastle() :
+    global coins
+
+    if coins >= 1000 :
+        return True
+    else :
+        print(f"Для постройки замка тебе нужно накопить еще {1000 - coins} монет.")
+        return False
+
+
+son_name = ""
+
+
+def continueWithSon() :
+    global son_name
+
+    if not son_name :
+        son_name = input("Теперь дай имя своему сыну: ")
+
+    hero_father_name = player_name + "ич"
+    print(
+        f"Добро пожаловать в мир Дремучего Леса! Сын прославленного Героя - Правителя, {son_name} {hero_father_name}! Удачи в твоих странствиях!")
+
+    restartGame()
+    gameLoop()
+
+
+def restartGame() :
+    global hp
+    global coins
+    global damage
+    global player_name
+    global monsters_killed
+    global warriors
+    global son_name  # Добавляем переменную сына
+
+    hp = 0
+    coins = 0
+    damage = 0
+    player_name = ""
+    monsters_killed = 0
+    warriors = []
+    son_name = ""  # Сбрасываем имя сына при рестарте игры
+
+
+def gameLoop() :
+    global hp
+    global coins
+    global damage
+    global player_name
+    print("Добро пожаловать в мир Дремучего Леса! Он полон тайн и опасностей и не прощает ошибок! Ты молодой искатель приключений в поисках монет и славы!")
+    print("Твоя задача накопить 100 монет и уйти из Дремучего Леса к новой жизни...")
+    print("А может ты хочешь добиться несметного богатства и стать Правителем этих земель? Тебе решать! Удачи!")
+    initGame()
+
+    while True :
+        situation = r.randint(0, 15)
+        if situation == 0 :
+            hp, coins, damage = meetShop()
+        elif situation == 1 :
+            hp, coins, damage = meetMonster()
+        elif situation == 2 :
+            mysteriousSage()
+        elif situation == 3 :
+            dynamicEvent()
+        elif situation == 4 :
+            hp, coins, damage = meetMonster()
+        elif situation == 5 :
+            dragonTreasure()
+        elif situation == 6 :
+            villageQuest()
+        elif situation == 7 :
+            tavern()
+        elif situation == 8 :
+            robinHoodBattle()
+        elif situation == 9 :
+            banditQuest()
+        elif situation == 10 :
+            tmutarakan()
+        elif situation == 11 :
+            hp, coins, damage = meetMonster()
+        else :
+            print("Бродит по Дремучему лесу...")
+
+        print("Текущая информация:")
+        printHeroInfo()
+        printCoins()
+        printWarriorsInfo()
+
+        if hp <= 0 :
+            if input("Готов начать сначала? (да/нет): ").lower() == "да" :
+                initGame()
+            else :
+                break
+
+        if coins >= 100 :
+            choice = input(
+                "Поздравляю, {}! Ты накопил 100 монет и можешь уйти из Дремучего Леса и начать новую жизнь. Хочешь продолжить свои приключения? (да/нет): ".format(
+                    player_name)).lower()
+            if choice != "да" :
+                break
+
+        if coins >= 1000 :
+            print("У тебя накопилось 1000 или более монет. Теперь ты можешь построить замок.")
+            choice = input("Хочешь построить замок? И стать Правителем? (да/нет): ").lower()
+            if choice == "да" :
+                if buildCastle() :
+                    continueWithSon()
+                    break
+
+        input("Нажмите Enter, чтобы продолжить...")
+
+    print("Игра окончена.")
+    print("Ты убил {} чудищ.".format(monsters_killed))
+
+
+gameLoop()
